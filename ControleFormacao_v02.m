@@ -56,7 +56,7 @@ z2 = 0.75*ones(length(t),1);
 phi2 = zeros(length(t),1);
 phid = 0;
 
-ganho = 0.4;
+ganho = 0.6;
 
 %
 pos = zeros(3,length(t));
@@ -69,6 +69,7 @@ for i=1: length(t)
     %Xd = transpose([sin(0.5*t(k)) cos(0.5*t(k)) 0.5 0]);
     
     %Erros de controle
+    
     X = transpose([x(i) y(i) z(i) phi(i)]);    
     Xtio = Xd - X;
     
@@ -80,10 +81,10 @@ for i=1: length(t)
     U{i} = ((f1^-1)*(Xd*To + kp*(tanh(kd*Xtio))))*ganho;
            
     %Define a nova posicão do drone1
-    x(i+1) = x(i)+To*U{i}(1);
-    y(i+1) = y(i)+To*U{i}(2);
-    z(i+1) = z(i)+To*U{i}(3);
-    phi(i+1) = phi(i)+To*U{i}(4);
+%     x(i+1) = x(i)+To*U{i}(1);
+%     y(i+1) = y(i)+To*U{i}(2);
+%     z(i+1) = z(i)+To*U{i}(3);
+%     phi(i+1) = phi(i)+To*U{i}(4);
     
     
     %Pega a posicao atual do drone1
@@ -108,7 +109,7 @@ for i=1: length(t)
     
     qtil(:,i) = qdes - q';
     
-    
+      
     %Ganhos
     L1 = 0.2*eye(6);
     L2 = 0.4*eye(6);
@@ -116,26 +117,23 @@ for i=1: length(t)
     %Para a tarefa de posicionamento, qdesp = 0
     
     qrefp = L1*tanh(L2*qtil(:,i));
-    %qRefPonto = L*tanh(inv(L)*kp*qTil(:,i));
-    
-    %qrefp = L1*tanh(inv(L1)*L2*qtil(:,i));
     
     
     
-    
+    %jacobiana dos slides
 %     jacob = [ 1, 0, 0, 0, 0, 0; ...
 %               0, 1, 0, 0, 0, 0; ...
 %               0, 0, 1, 0, 0, 0; ...
 %               1, 0, 0, cos(alphaf)*cos(betaf), -rhof*sin(alphaf)*cos(betaf), -rhof*cos(alphaf)*sin(betaf); ...
-%               0, 1, 0, cos(betaf)*sin(alphaf), rhof*cos(alphaf)*cos(betaf),  -rhof*sin(alphaf)*sin(betaf); ...
+%               0, 1, 0, sin(alphaf)*cos(betaf), rhof*cos(alphaf)*cos(betaf),  -rhof*sin(alphaf)*sin(betaf); ...
 %               0, 0, 1, sin(betaf), 0, rhof*cos(betaf)];
 
 
     jacob = [ 1, 0, 0, 0, 0, 0; ...
               0, 1, 0, 0, 0, 0; ...
               0, 0, 1, 0, 0, 0; ...
-              1, 0, 0, cos(alphaf)*cos(betaf), -rhof*cos(alphaf)*sin(betaf), -rhof*cos(betaf)*sin(alphaf); ...
-              0, 1, 0, cos(betaf)*sin(alphaf), -rhof*sin(alphaf)*sin(betaf),  rhof*cos(alphaf)*cos(betaf); ...
+              1, 0, 0, cos(alphaf)*cos(betaf), -rhof*sin(betaf)*cos(alphaf), -rhof*cos(betaf)*sin(alphaf); ...
+              0, 1, 0, sin(alphaf)*cos(betaf), -rhof*sin(alphaf)*sin(betaf),  rhof*cos(alphaf)*cos(betaf); ...
               0, 0, 1, sin(betaf), rhof*cos(betaf), 0];
           
     xrefp = jacob*qrefp;
@@ -147,11 +145,17 @@ for i=1: length(t)
          0 0 0 sin(phid) cos(phid) 0; ...
          0 0 0 0 0 1];
     
-    v{i} = K*xrefp; 
+    v{i} = K*xrefp;
     
-    x2(i+1) = x2(i)+To*v{i}(4);
-    y2(i+1) = y2(i)+To*v{i}(5);
-    z2(i+1) = z2(i)+To*v{i}(6);
+    x(i+1) = x(i)+To*v{i}(1);
+    y(i+1) = y(i)+To*v{i}(2);
+    z(i+1) = z(i)+To*v{i}(3);
+    phi(i+1) = phi(i)+To*v{i}(3);
+    
+    
+    x2(i+1) = x2(i)+To*v{i}(1);
+    y2(i+1) = y2(i)+To*v{i}(2);
+    z2(i+1) = z2(i)+To*v{i}(3);
     phid = 0;
     
     
@@ -162,10 +166,10 @@ end
 paso=2; axis 'equal'
 
 H1 = plot3(x(1),y(1),z(1),'yo','LineWidth',2,'MarkerEdgeColor','k',...
-        'MarkerFaceColor','y','MarkerSize',8);
+        'MarkerFaceColor','g','MarkerSize',8);
 H2 = plot3(x(1),y(1),z(1),'*m'); 
 
-H1_D2 = plot3(x2(1), y2(1), z2(1), 'yo', 'LineWidth',2, 'MarkerEdgeColor','k','MarkerFaceColor','y','MarkerSize',8);
+H1_D2 = plot3(x2(1), y2(1), z2(1), 'yo', 'LineWidth',2, 'MarkerEdgeColor','k','MarkerFaceColor','r','MarkerSize',8);
 H2_D2 = plot3(x2(1),y2(1),z2(1),'*m'); hold on
 
 
@@ -179,15 +183,15 @@ for i=1:paso:length(t)
     delete(H1_D2)
     delete(H2_D2)
     
-    axis([-4 4 -4 4 0 4]);  
+    axis([-8 8 -8 8 0 8]);  
     view([50.0,20.0]);
     H1 = plot3(x(i),y(i),z(i),'yo','LineWidth',1,'MarkerEdgeColor','k',...
-        'MarkerFaceColor','y','MarkerSize',9);
+        'MarkerFaceColor','g','MarkerSize',9);
     H2 = plot3(x(1:i),y(1:i),z(1:i) ,'--g');hold on
     
   
     H1_D2 = plot3(x2(i),y2(i),z2(i),'yo','LineWidth',1,'MarkerEdgeColor','k',...
-        'MarkerFaceColor','y','MarkerSize',9);
+        'MarkerFaceColor','r','MarkerSize',9);
     H2_D2 = plot3(x2(1:i),y2(1:i),z2(1:i) ,'--r');hold on
     
     
